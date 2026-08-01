@@ -32,7 +32,7 @@ api.iibb.com.tr {
 	# The trailing * swallows the UUID and the trailing slash, so every
 	# verification link resolves to the same file.
 	handle /ckys-backend/route_permit/verify/* {
-		root * /var/www/ozbeklerhafriyat
+		root * /var/www/iibb
 		rewrite * /index.html
 		file_server
 
