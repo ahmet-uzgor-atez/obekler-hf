@@ -1,0 +1,38 @@
+{
+	# ACME account email — Let's Encrypt sends expiry/problem notices here
+	email ahmet.uzgor@mycellia.ai
+}
+
+# ---- Main site: serves index.html over HTTPS ----
+ozbeklerhafriyat.com, www.ozbeklerhafriyat.com {
+	root * /var/www/ozbeklerhafriyat
+	encode zstd gzip
+	file_server
+
+	# Clean URLs: /belge/273713001 -> /belge/273713001.html -> index.html
+	try_files {path} {path}/index.html {path}.html /index.html
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	log {
+		output file /var/log/caddy/site.log
+	}
+}
+
+# ---- API subdomain: https://api.<domain>/... ----
+api.ozbeklerhafriyat.com {
+	encode zstd gzip
+
+	# Point this at whatever your backend listens on locally.
+	reverse_proxy 127.0.0.1:3000 {
+		header_up X-Real-IP {remote_host}
+	}
+
+	log {
+		output file /var/log/caddy/api.log
+	}
+}
