@@ -1,15 +1,16 @@
 {
 	# ACME account email — Let's Encrypt sends expiry/problem notices here
-	email ahmet.uzgor@mycellia.ai
+	email ahmetuzgor10@gmail.com
 }
 
-# ---- Main site: serves index.html over HTTPS ----
-ozbeklerhafriyat.com, www.ozbeklerhafriyat.com {
-	root * /var/www/ozbeklerhafriyat
+# ---- Main site ----
+# Requires A records for @ and www. If you only created the `api` record,
+# delete this block or Caddy will retry cert issuance for it forever.
+iibb.com.tr, www.iibb.com.tr {
+	root * /var/www/iibb
 	encode zstd gzip
 	file_server
 
-	# Clean URLs: /belge/273713001 -> /belge/273713001.html -> index.html
 	try_files {path} {path}/index.html {path}.html /index.html
 
 	header {
@@ -23,13 +24,31 @@ ozbeklerhafriyat.com, www.ozbeklerhafriyat.com {
 	}
 }
 
-# ---- API subdomain: https://api.<domain>/... ----
-api.ozbeklerhafriyat.com {
+# ---- API subdomain ----
+api.iibb.com.tr {
 	encode zstd gzip
 
-	# Point this at whatever your backend listens on locally.
-	reverse_proxy 127.0.0.1:3000 {
-		header_up X-Real-IP {remote_host}
+	# https://api.<domain>/ckys-backend/route_permit/verify/<any-uuid>/  -> index.html
+	# The trailing * swallows the UUID and the trailing slash, so every
+	# verification link resolves to the same file.
+	handle /ckys-backend/route_permit/verify/* {
+		root * /var/www/ozbeklerhafriyat
+		rewrite * /index.html
+		file_server
+
+		header {
+			Cache-Control "no-store"
+			X-Content-Type-Options "nosniff"
+			Referrer-Policy "strict-origin-when-cross-origin"
+		}
+	}
+
+	# Everything else on the subdomain goes to the backend.
+	# Drop this block if you have no backend yet.
+	handle {
+		reverse_proxy 127.0.0.1:3000 {
+			header_up X-Real-IP {remote_host}
+		}
 	}
 
 	log {
